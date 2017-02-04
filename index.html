@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UTF-Snow</title>
+    <script src="dist/UTFSnow.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- <link rel="stylesheet" type="text/css" href="syntax.css"> -->
+</head>
+<script>
+
+"use strict"
+window.addEventListener("load", () => {
+
+    let utfSnow = new UTFSnow()
+
+    const configuratorOptions = {
+        content: "&#x2744;",
+        color: "black",
+        speedMultiplier: 1,
+        densityMultiplier: 1,
+        limit: 25,
+        mouseTilt: true,
+        mouseNudge: true,
+        mousePop: true
+    },
+
+    defaultValues = {
+        content: "&#x2744;",
+        color: "black",
+        speedMultiplier: 1,
+        densityMultiplier: 1,
+        limit: 25,
+        mouseTilt: true,
+        mouseNudge: true,
+        mousePop: true
+    },
+
+    syntaxElements = [],
+
+    inputs = Array.from(document.querySelectorAll("input")),
+
+    buttons = Array.from(document.querySelectorAll("button")),
+
+    updateConfigurator = () => {
+        inputs.forEach(input => {
+            configuratorOptions[input.id] = input.type=="checkbox" ? input.checked : input.value
+        }) 
+        updateSnowAndOutput()
+    },
+
+    updateSnowAndOutput = () => {
+        clearOldPreview()
+        optionsContainer.innerHTML = ""
+
+        utfSnow = new UTFSnow(configuratorOptions)
+
+        const opts = Object.keys(configuratorOptions)
+                     .filter(key => configuratorOptions[key]!=defaultValues[key])
+                     .map(key => createOptionElement(key, configuratorOptions[key]))
+
+        if(opts.length){
+
+            optionsContainer.appendChild(syntaxElements[0])
+
+            opts.forEach((option, index) => {
+                optionsContainer.appendChild(option[0])
+
+                const colonElem = syntaxElements[1].cloneNode()
+                colonElem.innerHTML = ":"
+
+                optionsContainer.appendChild(colonElem)
+                optionsContainer.appendChild(option[1])
+
+                if(index<opts.length-1)
+                    optionsContainer.innerHTML += ", "
+            })
+
+            optionsContainer.appendChild(syntaxElements[2])
+        }
+    },
+
+    createOptionElement = (key, value) => {
+
+        const keyElem = document.createElement("span")
+        keyElem.innerHTML = key
+
+        const valElem = document.createElement("span")
+        valElem.className = "token string"
+
+        const valueString = value.toString().replace(/&/g, "&amp;"),
+        isNumberOrBool = typeof value=="boolean" || !Number.isNaN(parseFloat(value))
+
+        valElem.innerHTML = isNumberOrBool ? value : `"${valueString}"`
+
+        return [keyElem, valElem]
+    },
+
+    clearOldPreview = () => {
+        utfSnow.pause()
+        utfSnow.particleContainer.remove()
+
+        if(utfSnow.interactionContainer)
+            utfSnow.interactionContainer.remove()
+    }
+
+    // Create the reusable syntax elements
+    const openCurly = document.createElement("span")
+    openCurly.className = "token punctuation"
+    openCurly.innerHTML = "{"
+
+    const colonElem = document.createElement("span")
+    colonElem.className = "token punctuation"
+
+    const closeCurly = document.createElement("span")
+    closeCurly.className = "token punctuation"
+    closeCurly.innerHTML = "}"
+
+    syntaxElements.push(openCurly)
+    syntaxElements.push(colonElem)
+    syntaxElements.push(closeCurly)
+
+    buttons.forEach(button => {
+        button.addEventListener("click", () => {
+
+            if(button.className=="functionButton"){
+                console.log("functionButton", button.id)
+                return utfSnow[button.id]()
+            }
+
+            content.value = "&#"+button.className+";"
+            color.value = button.id
+            updateConfigurator()
+        })        
+    })
+
+    inputs.forEach(input => {
+
+        input.addEventListener("keyup", updateConfigurator)
+        input.addEventListener("change", updateConfigurator)
+    }) 
+})
+</script>
+<style>
+    body {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        margin: 0;
+        font-family: Helvetica;
+        overflow-y:  hidden; 
+    }
+
+    #splash {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        align-items: center;
+        font-size: 275%;
+        text-align: center;
+        height: 30vh;
+        box-shadow: 0 0 20px 2px rgba(0,0,0,0.3) inset;
+    }
+
+    #splash > span {
+        font-size: 12pt;
+        padding: 5px;
+        /*margin: 10px;*/
+    }
+
+    body > div:nth-child(2) {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    body > div:nth-child(2) {
+        padding: 25px;
+    }
+
+    .configurations {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 10px;
+    }
+
+    .configurations > div {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 10vh;
+        width: 750px;
+        max-width: 100vw;
+        border: 1px solid #EEE;
+    }
+
+    .configurations > div > div {
+        display: flex;
+        align-items: center;
+    }
+
+    button {
+        margin: 10px;
+        padding: 5px;
+        background-color: #DDD; 
+        font-size: 115%;
+    }
+
+    #contentButtons > button {
+        width: 30px;
+    }
+
+    input {
+        height: 30px;
+        width: 75px;
+        margin: 20px;
+        font-size: 115%;
+        text-align: center;
+    }
+
+    #content {
+        width: 100px;
+    }
+
+    #outputContainer {
+        display: flex;
+        justify-content: center;
+        align-content: center;
+        padding: 10px;
+        width: 750px;
+        max-width: 100vw;
+        font-size: 115%;
+    }
+
+    #outputEditor, pre, code {
+        overflow: auto;
+        max-width: 95vw;
+    }
+
+    @media screen and (max-width: 750px){
+
+        .configurations > div {
+            overflow: auto;
+        }       
+
+    }
+
+</style>
+<body>
+    <div id="splash">
+        <span></span>
+        UTF Snow
+        <span>UTF Snow is a tiny, highly configurable library that snows down interactive UTF characters on your page.</span>
+    </div>
+    <div>
+        <div>Try out the configurations below</div>
+        <div class="configurations">
+            <div>
+                <div>Content</div>
+                <div id="contentButtons">
+                    <button id="black" class="x2744">&#x2744;</button>
+                    <button id="red" class="9829">&#9829;</button>
+                    <button id="yellow" class="9728">&#9728;</button>
+                    <button id="blue" class="9732">&#9732;</button>
+                    <button id="white" class="9733">&#9733;</button>
+                    <button id="darkorange" class="9762">&#9762;</button>
+                    <button id="green" class="9763">&#9763;</button>
+                </div>
+                <input id="content" type="text" placeholder="enter here the content you want snowing down" value="&amp;#x2744;">
+                Colour
+                <input id="color" type="text" value="black">
+            </div>
+            <div>
+                <div>
+                    <div>Speed multiplier</div>
+                    <div>
+                        <input id="speedMultiplier" type="number" step="0.1" min="0" value="1" />
+                    </div>
+                </div>
+                <div>
+                    <div>Density multiplier</div>
+                    <div>
+                        <input id="densityMultiplier" type="number" step="0.1" min="0" value="1">
+                    </div>
+                </div>
+                <div>
+                    <div>Particle Limit</div>
+                    <div>
+                        <input id="limit" type="number" min="0" value="25">
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div>
+                    <div>Mouse Tilt</div>
+                    <div>
+                        <input id="mouseTilt" type="checkbox" checked>
+                    </div>
+                </div>
+                <div>
+                    <div>Mouse Nudge</div>
+                    <div>
+                        <input id="mouseNudge" type="checkbox" checked>
+                    </div>
+                </div>
+                <div>
+                    <div>Mouse Pop</div>
+                    <div>
+                        <input id="mousePop" type="checkbox" checked>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="outputContainer">
+            <div id="outputEditor">
+                <pre class="language-javascript"><code id="code" data-language="javascript"><span class="token keyword">const</span> utfSnow <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">UTFSnow</span><span class="token punctuation">(</span><span id="optionsContainer"></span><span class="token punctuation">)</span></code></pre>
+            </div>
+        </div>
+
+        <div class="configurations">
+            <div>
+                <button id="pause" class="functionButton">utfSnow.pause()</button>
+                <button id="resume" class="functionButton">utfSnow.resume()</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+
+<!-- http://www.w3schools.com/charsets/ref_utf_misc_symbols.asp -->
